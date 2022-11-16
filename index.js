@@ -4,7 +4,7 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 require('dotenv').config()
 const port = process.env.PORT || 5000;
 
-const app =express();
+const app = express();
 
 //middleware//
 app.use(cors());
@@ -19,18 +19,33 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 
 async function run() {
-    
-    try{
+
+    try {
 
         const appointmentOptionCollection = client.db('dentistPortal').collection('appointmentOptions')
-        app.get('/appointmentOptions',async(req,res)=>{
-            const query={}
+        const bookingsCollection = client.db('dentistPortal').collection('bookings')
+
+        app.get('/appointmentOptions', async (req, res) => {
+            const query = {}
             const options = await appointmentOptionCollection.find(query).toArray();
             res.send(options)
         })
+
+        app.post('/bookings', async (req, res) => {
+            const booking = req.body
+            console.log(booking);
+            const result = await bookingsCollection.insertOne(booking);
+            res.send(result)
+        })
+
+
+
+
+
+
     }
 
-    finally{
+    finally {
 
     }
 }
@@ -40,8 +55,18 @@ run().catch(console.log)
 
 
 
-app.get('/',async(req,res)=>{
+app.get('/', async (req, res) => {
     res.send('dentist portal server is running')
 })
 
-app.listen(port,()=>console.log(`dentist portal running on ${port}`))
+app.listen(port, () => console.log(`dentist portal running on ${port}`))
+
+
+/*//
+ *bookings
+ *app.get('/bookings')
+ *app.get(/booking/:id)
+ *app.post('/bookings')
+ *app.patch('/bookings/:id)
+ /*app.delete('/bookings/:id)
+ ////*/
