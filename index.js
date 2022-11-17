@@ -25,15 +25,39 @@ async function run() {
         const appointmentOptionCollection = client.db('dentistPortal').collection('appointmentOptions')
         const bookingsCollection = client.db('dentistPortal').collection('bookings')
 
+
+        ///use aggregate to query multiple  collection to merge the data////
         app.get('/appointmentOptions', async (req, res) => {
+            const date = req.query.date;
+            console.log(date);
             const query = {}
             const options = await appointmentOptionCollection.find(query).toArray();
+            const bookingQuery = { appointmentDate: date }
+            const alreadyBooked = await bookingsCollection.find(bookingQuery).toArray()
+            options.forEach(option => {
+                const optionBooked = alreadyBooked.filter(book => book.treatment === option.name)
+                const bookedSlots = optionBooked.map(book => book.slot)
+                const remainingSlots = option.slots.filter(slot => !bookedSlots.includes(slot))
+                option.slots = remainingSlots;
+            })
             res.send(options)
         })
 
         app.post('/bookings', async (req, res) => {
             const booking = req.body
-            console.log(booking);
+            const query={
+                appointmentDate: booking.appointmentDate,
+                email: booking.email,
+                treatment: booking.treatment
+            }
+
+
+            const alreadyBooked =  await bookingsCollection.find(query).toArray();
+            if(alreadyBooked.length){
+                const message =`You Already have a booking on ${booking.appointmentDate}`
+                 return res.send({acknowledged:false,message})
+
+            }
             const result = await bookingsCollection.insertOne(booking);
             res.send(result)
         })
